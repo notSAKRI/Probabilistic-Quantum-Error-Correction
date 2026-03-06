@@ -138,7 +138,7 @@ def to_Y(T1: float, t: float):
 # Returns the dephasing strength for the given T2 and T1 and t. T1 and T2 is required to calculate the T_phi.
 def to_p(T2: float, T1: float, t: float):
     gamma_phi = (1/T2) - (1/(2*T1))
-    return (1 + np.exp(-gamma_phi*t))/2.0
+    return (1 - np.exp(-gamma_phi*t))/2.0
 
 # Code to fix the T1 and T2 properties of the qubits of the fake backend
 def fix_qubit_properties(backend: GenericBackendV2, T1: float = 0.0, T2: float = 0.0):

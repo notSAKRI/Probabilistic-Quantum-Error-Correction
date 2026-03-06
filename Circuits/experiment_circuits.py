@@ -45,7 +45,7 @@ def encoder(state: str = '1'):
     else:
         raise ValueError('Invalid state')
     
-    qc.append(dutta3_encoder(), qc.qubits)
+    qc.append(PI3_encoder(), qc.qubits)
     return qc
 
 # T1 exp circuit
@@ -84,13 +84,13 @@ def bare_qubit_T2_circ(num_echoes: int, delay: int):
 # Single QEC circuit. Implements the approximate recovery circuit.
 # delay: int - delay time (in dt of the system)
 # flag: int - Takes only 0 and 1. Flag to indicate whether to use the classical controlled recovery circuit or not.
-def dutta3_single_qec_circ(enc: QuantumCircuit, delay: int, flag: int = 0):
+def PI3_single_qec_circ(enc: QuantumCircuit, delay: int, flag: int = 0):
     
     if flag == 1:
-        Rk = dutta3_recovery(clbits = 1)
+        Rk = PI3_recovery(clbits = 1)
         carg = [0]
     else:
-        Rk = dutta3_recovery()
+        Rk = PI3_recovery()
         carg = []
 
     qc = QuantumCircuit(5,4 + flag, name = 'Single_QEC')
@@ -109,7 +109,7 @@ def dutta3_single_qec_circ(enc: QuantumCircuit, delay: int, flag: int = 0):
 # Multi QEC circuit. Implements the approximate recovery circuit.
 # delay: int - delay time (in dt of the system)
 # flag: int - Takes only 0 and 1. Flag to indicate whether to use the classical controlled recovery circuit or not.
-def dutta3_multi_qec_circ(enc: QuantumCircuit, delay: int, qec_cycle_relaxation: int, rec_time: int, flag: int = 0):
+def PI3_multi_qec_circ(enc: QuantumCircuit, delay: int, qec_cycle_relaxation: int, rec_time: int, flag: int = 0):
     total_qec = int(np.ceil(delay/qec_cycle_relaxation))
     if total_qec == 0:
         total_qec = 1
@@ -117,10 +117,10 @@ def dutta3_multi_qec_circ(enc: QuantumCircuit, delay: int, qec_cycle_relaxation:
         total_qec -= 1
 
     if flag == 1:
-        Rk = dutta3_recovery(clbits = 1)
+        Rk = PI3_recovery(clbits = 1)
         carg = [0]
     else:
-        Rk = dutta3_recovery()
+        Rk = PI3_recovery()
         carg = []
 
     qc = QuantumCircuit(5, 3+flag+total_qec)
@@ -154,13 +154,13 @@ def dutta3_multi_qec_circ(enc: QuantumCircuit, delay: int, qec_cycle_relaxation:
 # delay: int - delay time (in dt of the system)
 # flag: int - Takes only 0 and 1. Flag to indicate whether to use the classical controlled recovery circuit or not.
 # estimated_T1: float - Needed to calculate the Y then generate the D part of the recovery circuit.
-def dutta3_single_qec_actual_circ(enc: QuantumCircuit, delay: int, flag: int = 0, estimated_T1: float = 200):
+def PI3_single_qec_actual_circ(enc: QuantumCircuit, delay: int, flag: int = 0, estimated_T1: float = 200):
     
     if flag == 1:
-        Rk = dutta3_recovery(clbits = 1)
+        Rk = PI3_recovery(clbits = 1)
         carg = [0]
     else:
-        Rk = dutta3_recovery(to_Y(estimated_T1, delay))
+        Rk = PI3_recovery(to_Y(estimated_T1, delay))
         carg = []
 
     qc = QuantumCircuit(5,4 + flag, name = 'Single_QEC')

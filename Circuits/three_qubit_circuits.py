@@ -3,7 +3,7 @@ sys.path.append('..')
 from Circuits.general_circuits import *
 
 # Encoder circuit for the three qubit PI code.
-def dutta3_encoder():
+def PI3_encoder():
     qc = QuantumCircuit(3, name='Encoder')
     qc = QuantumCircuit(3)
     qc.rx(1.0471975511952163,0)
@@ -33,7 +33,7 @@ def dutta3_encoder():
     return qc
 
 # Circuit for the approximate diagonal matrix of the recovery
-def dutta3_aprrox_d():
+def PI3_aprrox_d():
     # Total Time = 5*(CZ Time) + 6*(SX Time) = 532 ns = 133 dt 
     theta = np.array([2.35625852, 1.57079633, 2.35625853, 1.57079633, 4.71238898,
        3.92692678, 4.71238898, 0.78533413])
@@ -55,7 +55,7 @@ def dutta3_aprrox_d():
     return qc
 
 # Parity check circuit
-def dutta3_zzz():
+def PI3_zzz():
     qc = QuantumCircuit(4)
 
     qc.cx(1,0)
@@ -69,7 +69,7 @@ def dutta3_zzz():
     return qc
 
 # Parity check and a small part of the Vh matrix. It should be used if we are not using control if.
-def dutta3_zzz_without_cif():
+def PI3_zzz_without_cif():
     # Total Time = 22*(CZ Time) + 27*(SX Time) = 2392 ns = 598 dt 
     qc = QuantumCircuit(4)
     
@@ -90,7 +90,7 @@ def dutta3_zzz_without_cif():
     return qc
 
 # U part of the circuit of the recovery matrix
-def dutta3_u(): 
+def PI3_u(): 
     theta = np.array([2.0943951 , 0.95531662, 0.78539816, 0.78539816, 5.32786869,
        4.71238898, 1.57079633, 0.78539816, 1.57079633, 1.57079633,
        1.57079633, 1.57079633, 1.57079633, 0.78539816, 0.78539816,
@@ -122,7 +122,7 @@ def dutta3_u():
     return qc
 
 # Vh part of the circuit of the recovery matrix
-def dutta3_v(): 
+def PI3_v(): 
     theta = np.array([1.57079633, 1.57079633, 0.78539816, 1.57079633, 1.57079633,
        1.57079633, 2.35619449, 4.09690927, 4.71238898, 1.57079633,
        1.04719755, 0.95531662, 2.35619449, 2.35619449, 0.78539816,
@@ -156,10 +156,10 @@ def dutta3_v():
 # Returns the recovery circuit of the three qubit PI code.
 # If Y is not specified it will return the arrprximate recovery circuit (i.e. Y = 0.0).
 # If clbits is not specified the circuit won't have classical control.
-def dutta3_recovery(Y: float = 0.0, clbits: int = 0):
+def PI3_recovery(Y: float = 0.0, clbits: int = 0):
 
     if Y == 0.0:
-        d_circ = dutta3_aprrox_d()
+        d_circ = PI3_aprrox_d()
     else:
         d_circ = QuantumCircuit(4)
         d_circ.append(
@@ -174,7 +174,7 @@ def dutta3_recovery(Y: float = 0.0, clbits: int = 0):
     if clbits != 0:
 
         qc = QuantumCircuit(5, clbits)
-        qc.append(dutta3_zzz(), qc.qubits[:-1])
+        qc.append(PI3_zzz(), qc.qubits[:-1])
         qc.measure(0, 0)
         xxx = QuantumCircuit(3, name = 'XXX')
         xxx.x(0)
@@ -185,26 +185,26 @@ def dutta3_recovery(Y: float = 0.0, clbits: int = 0):
         if_op_1 = IfElseOp((qc.clbits[0], 0), xxx)
         if_op_2 = IfElseOp((qc.clbits[0], 0), x)
         qc.append(if_op_1, qc.qubits[1:-1])
-        qc.append(dutta3_v(), qc.qubits[1:-1])
+        qc.append(PI3_v(), qc.qubits[1:-1])
         qc.append(if_op_2, [1])
         if Y == 0.0:
             qc.append(d_circ, qc.qubits[2:])
         else:
             qc.append(d_circ, qc.qubits[1:])
-        qc.append(dutta3_u(), qc.qubits[1:-1])
+        qc.append(PI3_u(), qc.qubits[1:-1])
     
     else:
 
         # Total time = 2392 + 632 + 532 + 632 = 4188 ns = 1047 dt
         qc = QuantumCircuit(5)
-        qc.append(dutta3_zzz_without_cif(), qc.qubits[:-1])
-        qc.append(dutta3_v(), qc.qubits[1:-1])
+        qc.append(PI3_zzz_without_cif(), qc.qubits[:-1])
+        qc.append(PI3_v(), qc.qubits[1:-1])
         qc.cx(0,1)
         if Y == 0.0:
             qc.append(d_circ, qc.qubits[2:])
         else:
             qc.append(d_circ, qc.qubits[1:])
-        qc.append(dutta3_u(), qc.qubits[1:-1])
+        qc.append(PI3_u(), qc.qubits[1:-1])
 
     qc.name = 'Recovery'
     return qc

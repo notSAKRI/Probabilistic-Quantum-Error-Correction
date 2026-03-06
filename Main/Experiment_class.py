@@ -1,6 +1,6 @@
 import sys, os, json
 sys.path.append('..')
-from Circuits.exp_circuits import *
+from Circuits.experiment_circuits import *
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from qiskit import transpile
@@ -9,7 +9,7 @@ from qiskit_experiments.library import LocalReadoutError
 from qiskit.result import Counts
 from qiskit_experiments.data_processing import LocalReadoutMitigator
 
-class Dutta3_T1exp:
+class PIcode_experiment:
 
     # Suggested to not use any mitigation techniques. Replace with any other mitigation techniques if needed.
     def __init__(self, backend = None, use_cif: bool = False, use_mitigation: bool = False):
@@ -232,7 +232,7 @@ class Dutta3_T1exp:
         enc = encoder(state)
 
         for delay in delays:
-            circ = dutta3_single_qec_circ(enc, delay, flag)
+            circ = PI3_single_qec_circ(enc, delay, flag)
             num_clbits = circ.num_clbits
             qc = QuantumCircuit(len(physical_qubits), total_set*num_clbits)
             for k in range(len(qubit_pos)):
@@ -290,7 +290,7 @@ class Dutta3_T1exp:
         for delay in delays:
             
             delay = int(delay)
-            circ = dutta3_multi_qec_circ(enc, delay, qec_cycle_relaxation, rec_time, flag)
+            circ = PI3_multi_qec_circ(enc, delay, qec_cycle_relaxation, rec_time, flag)
             num_clbits = circ.num_clbits
             qc = QuantumCircuit(len(physical_qubits), total_set*num_clbits)
             for k in range(len(qubit_pos)):
@@ -376,10 +376,10 @@ class Dutta3_T1exp:
 
         if self.use_cif:
             flag = 1
-            Rk = dutta3_recovery(clbits = 1)
+            Rk = PI3_recovery(clbits = 1)
         else:
             flag = 0
-            Rk = dutta3_recovery()
+            Rk = PI3_recovery()
 
         qubits = {}
         i = 0
@@ -534,10 +534,10 @@ class Dutta3_T1exp:
 
         if self.use_cif:
             flag = 1
-            Rk = dutta3_recovery(clbits = 1)
+            Rk = PI3_recovery(clbits = 1)
         else:
             flag = 0
-            Rk = dutta3_recovery()
+            Rk = PI3_recovery()
         
         qubits = {}
         i = 0
