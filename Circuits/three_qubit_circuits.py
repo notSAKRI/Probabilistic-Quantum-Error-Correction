@@ -4,6 +4,7 @@ from Circuits.general_circuits import *
 
 # Encoder circuit for the three qubit PI code.
 def PI3_encoder():
+    # Total Time = 548 ns for Torino
     qc = QuantumCircuit(3, name='Encoder')
     qc = QuantumCircuit(3)
     qc.rx(1.0471975511952163,0)
@@ -34,7 +35,6 @@ def PI3_encoder():
 
 # Circuit for the approximate diagonal matrix of the recovery
 def PI3_aprrox_d():
-    # Total Time = 5*(CZ Time) + 6*(SX Time) = 532 ns = 133 dt 
     theta = np.array([2.35625852, 1.57079633, 2.35625853, 1.57079633, 4.71238898,
        3.92692678, 4.71238898, 0.78533413])
     qc = QuantumCircuit(3)
@@ -70,7 +70,6 @@ def PI3_zzz():
 
 # Parity check and a small part of the Vh matrix. It should be used if we are not using control if.
 def PI3_zzz_without_cif():
-    # Total Time = 22*(CZ Time) + 27*(SX Time) = 2392 ns = 598 dt 
     qc = QuantumCircuit(4)
     
     qc.swap(0,1)
@@ -195,7 +194,7 @@ def PI3_recovery(Y: float = 0.0, clbits: int = 0):
     
     else:
 
-        # Total time = 2392 + 632 + 532 + 632 = 4188 ns = 1047 dt
+        # Total time = 3072 ns for Torino
         qc = QuantumCircuit(5)
         qc.append(PI3_zzz_without_cif(), qc.qubits[:-1])
         qc.append(PI3_v(), qc.qubits[1:-1])

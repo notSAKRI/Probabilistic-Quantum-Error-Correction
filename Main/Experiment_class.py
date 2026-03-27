@@ -9,12 +9,14 @@ from qiskit_experiments.library import LocalReadoutError
 from qiskit.result import Counts
 from qiskit_experiments.data_processing import LocalReadoutMitigator
 
+# The IBM-Heron timings are used in this class. 
 class PIcode_experiment:
 
     # Suggested to not use any mitigation techniques. Replace with any other mitigation techniques if needed.
-    def __init__(self, backend = None, use_cif: bool = False, use_mitigation: bool = False):
+    def __init__(self, backend = None, use_cif: bool = False, use_mitigation: bool = False, encoder_time: int = 548, recovery_time: int = 3072):
 
         self.backend = backend
+        self.dt = 4e-09
         if backend is not None:
             self.dt = backend.dt
             self.x_time = int(backend.target['x'][(0,)].duration/self.dt)
@@ -24,7 +26,8 @@ class PIcode_experiment:
         self.use_cif = use_cif
         self.use_mitigation = use_mitigation
         self.mitigator_data = {}
-
+        self.encoder_time = int(np.round(encoder_time/self.dt))
+        self.recovery_time = int(np.round(recovery_time/self.dt))
 
         self.storage = {}
 
@@ -285,7 +288,7 @@ class PIcode_experiment:
         qec_cycle_relaxation = int(np.round(qec_cycle_relaxation*1e-6/self.dt))
         circs = []
         enc = encoder(state)
-        rec_time = int(np.round(4200*1e-9/self.dt)) # approx 2*632 + 1100 + 532 + 1600 ns = 4500 ns = 1125 dt for torino (with cif) 4200 ns ( without cif )
+        rec_time = self.recovery_time
 
         for delay in delays:
             
@@ -360,8 +363,8 @@ class PIcode_experiment:
         elif state == '0_simplified':
             enc_time = int(np.round(428*1e-9/self.dt)) # approx 428 ns for heron
         else:
-            enc_time = int(np.round(632*1e-9/self.dt)) # approx 632 ns = 158 dt for heron
-        rec_time = int(np.round(4200*1e-9/self.dt)) # approx 2*632 + 1100 + 532 + 1600 ns = 4500 ns = 1125 dt for torino (with cif) 4200 ns ( without cif )
+            enc_time = self.recovery_time
+        rec_time = self.recovery_time
 
         if len(colors) == 2:
             W_rows = [2,3]
@@ -509,9 +512,8 @@ class PIcode_experiment:
         elif state == '0_simplified':
             enc_time = int(np.round(428*1e-9/self.dt)) # approx 428 ns for heron
         else:
-            enc_time = int(np.round(632*1e-9/self.dt)) # approx 632 ns = 158 dt for heron
-        rec_time = int(np.round(4200*1e-9/self.dt)) # approx 2*632 + 1100 + 532 + 1600 ns = 4500 ns = 1125 dt for torino (with cif) 4200 ns ( without cif )
-
+            enc_time = self.encoder_time
+        rec_time = self.recovery_time
         if len(colors) == 2:
             W_rows = [2,3]
         elif len(colors) == 4:
@@ -852,7 +854,7 @@ class PIcode_experiment:
                 self.storage[key]['success_rates'] = success_rates
 
     # Tag: The tag of the experiment whose result will be shown.
-    def show(self, tag: str, save_fig: bool = False, fig_name: str = None):
+    def show(self, tag: str, include_offset: bool = False, qec_cycle_relaxation: int = None, save_fig: bool = False, fig_name: str = None):
 
         if tag not in self.storage:
             raise ValueError(f'Invalid tag: {tag}')
@@ -893,6 +895,21 @@ class PIcode_experiment:
             except:
                 fids = np.array(self.storage[tag]['fids'][str(qubit_set)])
                 fids_stds = np.array(self.storage[tag]['fids_stds'][str(qubit_set)])
+
+            if include_offset:
+                enc_time = (self.encoder_time*self.dt)/1e3
+                rec_time = (self.recovery_time*self.dt)/1e3
+                if qec_cycle_relaxation is not None:
+                    for i in range(len(delays_us)):
+                        t = int(np.ceil(delays_us[i]/qec_cycle_relaxation))
+                        if t  == 0:
+                            t = 1
+                        delays_us[i] += t*rec_time
+                else:
+                    delays_us += rec_time
+                delays_us += 2*enc_time
+                print(delays_us)
+
 
         def exp_decay(x, tau, B, C, D):
             return np.exp(-x / tau)*np.sin(C*x + D) + B
@@ -947,9 +964,8 @@ class PIcode_experiment:
         if save_fig:
             plt.savefig(f'{tag}_{fig_name}.png', dpi=300)
 
-    def save(self, file_name: str):
+    def save(self, path: str):
 
-        path = f"Data/{file_name}.json"
         if os.path.exists(path):
             resp = input(f"{path} exists. Overwrite? (y/n): ")
             if resp.lower() != 'y':
@@ -979,9 +995,8 @@ class PIcode_experiment:
         with open(path, 'w') as f:
             json.dump(store, f, indent=2)
         
-    def load(self, file_name: str):
+    def load(self, path: str):
 
-        path = f"Data/{file_name}.json"
         with open(path, 'r') as f:
             store = json.load(f)
 
