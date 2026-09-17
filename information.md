@@ -47,9 +47,9 @@ B is the parameter added to account for the measurement errors.
 
 # Optimization Results:
 
-| Implemented Gate | Frobenius Norm Distance (Cost-function) | Channel Fidelity |
+| Implemented Gate | Frobenius Norm Distance (Cost-function) |
 |---|---|---|
-| Encoder | $ 7 \times 10^{-22}$ | 1.0 |
-| U | $ 7 \times 10^{-17}$ | 1.0 |
-| V | $ 5 \times 10^{-17}$ | 1.0 |
-| $\text{D}_\text{approx}$ | $ 1 \times 10^{-16}$ | 1.0 |
+| Encoder | $ 7 \times 10^{-22}$ |
+| U | $ 7 \times 10^{-17}$ |
+| V | $ 5 \times 10^{-17}$ |
+| $\text{D}_\text{approx}$ | $ 1 \times 10^{-16}$ |
