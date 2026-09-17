@@ -1,6 +1,6 @@
 import numpy as np
 from qiskit.providers.fake_provider import GenericBackendV2
-from qiskit.transpiler import InstructionProperties
+from qiskit.transpiler import InstructionProperties, QubitProperties
 
 # Linear Connectivity of qubits
 def linear_coupling(n):
@@ -72,7 +72,8 @@ def fake_backend(n: int, coupling_map: list[tuple] = [], gate_error: bool = True
         basis_gates = instruction_names,
         coupling_map= coupling_map,
         noise_info = True,
-        control_flow = True
+        control_flow = True,
+        dt=4e-9 if 'heron' in processor_type else 5e-10,
     )
 
     qargs_local = list(backend.target['x'].items())
@@ -84,11 +85,11 @@ def fake_backend(n: int, coupling_map: list[tuple] = [], gate_error: bool = True
 
         for qarg in qargs_local:
             if instructions['reset']['error'] is not None:
-                prop_reset = InstructionProperties(instructions['reset']['duration'], np.random.normal(instructions['reset']['error'], instructions['reset']['deviation']))
+                prop_reset = InstructionProperties(instructions['reset']['duration'], abs(np.random.normal(instructions['reset']['error'], instructions['reset']['deviation'])))
             else:
                 prop_reset = InstructionProperties(instructions['reset']['duration'], instructions['reset']['error'])
-            prop_x = InstructionProperties(instructions['x']['duration'], np.random.normal(instructions['x']['error'], instructions['x']['deviation']))
-            prop_meas = InstructionProperties(instructions['measure']['duration'], np.random.normal(instructions['measure']['error'], instructions['measure']['deviation']))
+            prop_x = InstructionProperties(instructions['x']['duration'], abs(np.random.normal(instructions['x']['error'], instructions['x']['deviation'])))
+            prop_meas = InstructionProperties(instructions['measure']['duration'], abs(np.random.normal(instructions['measure']['error'], instructions['measure']['deviation'])))
             backend.target.update_instruction_properties('reset', qarg, prop_reset)
             backend.target.update_instruction_properties('x', qarg, prop_x)
             backend.target.update_instruction_properties('rx', qarg, prop_x)
@@ -98,8 +99,6 @@ def fake_backend(n: int, coupling_map: list[tuple] = [], gate_error: bool = True
         for qarg in qargs_coup:
             prop_cz = InstructionProperties(instructions['cz']['duration'], np.random.normal(instructions['cz']['error'], instructions['cz']['deviation']))
             backend.target.update_instruction_properties('cz', qarg, prop_cz)
-        
-        backend.target.dt = 4e-09
 
     elif 'eagle' in processor_type:
         qargs_coup = list(backend.target['ecr'].items())
@@ -107,11 +106,11 @@ def fake_backend(n: int, coupling_map: list[tuple] = [], gate_error: bool = True
 
         for qarg in qargs_local:
             if instructions['reset']['error'] is not None:
-                prop_reset = InstructionProperties(instructions['reset']['duration'], np.random.normal(instructions['reset']['error'], instructions['reset']['deviation']))
+                prop_reset = InstructionProperties(instructions['reset']['duration'], abs(np.random.normal(instructions['reset']['error'], instructions['reset']['deviation'])))
             else:
                 prop_reset = InstructionProperties(instructions['reset']['duration'], instructions['reset']['error'])
-            prop_x = InstructionProperties(instructions['x']['duration'], np.random.normal(instructions['x']['error'], instructions['x']['deviation']))
-            prop_meas = InstructionProperties(instructions['measure']['duration'], np.random.normal(instructions['measure']['error'], instructions['measure']['deviation']))
+            prop_x = InstructionProperties(instructions['x']['duration'], abs(np.random.normal(instructions['x']['error'], instructions['x']['deviation'])))
+            prop_meas = InstructionProperties(instructions['measure']['duration'], abs(np.random.normal(instructions['measure']['error'], instructions['measure']['deviation'])))
             backend.target.update_instruction_properties('reset', qarg, prop_reset)
             backend.target.update_instruction_properties('x', qarg, prop_x)
             backend.target.update_instruction_properties('sx', qarg, prop_x)
@@ -120,8 +119,6 @@ def fake_backend(n: int, coupling_map: list[tuple] = [], gate_error: bool = True
         for qarg in qargs_coup:
             prop_cz = InstructionProperties(instructions['ecr']['duration'], np.random.normal(instructions['ecr']['error'], instructions['ecr']['deviation']))
             backend.target.update_instruction_properties('ecr', qarg, prop_cz)
-        
-        backend.target.dt = 5e-10
     
     else:
         raise Exception('Known Processors: heron_r1, heron_r2, eagle_r3')
@@ -140,10 +137,36 @@ def to_p(T2: float, T1: float, t: float):
     gamma_phi = (1/T2) - (1/(2*T1))
     return (1 - np.exp(-gamma_phi*t))/2.0
 
-# Code to fix the T1 and T2 properties of the qubits of the fake backend
-def fix_qubit_properties(backend: GenericBackendV2, T1: float = 0.0, T2: float = 0.0):
-    for i in range(backend.num_qubits):
-        if T1 != 0.0:
-            backend.target.qubit_properties[i].t1 = T1
-        if T2 != 0.0:
-            backend.target.qubit_properties[i].t2 = T2
+# Code to fix the T1 and T2 properties of the qubits of the fake backend. Provide values in microseconds.
+def fix_qubit_properties(
+    backend: GenericBackendV2,
+    T1: list[float] | float |None = None,
+    T2: list[float] | float |None = None,
+):
+    n = backend.num_qubits
+
+    if T1 is None:
+        T1 = [None] * n
+    elif type(T1) == float:
+        T1 = [T1] * n
+    if T2 is None:
+        T2 = [None] * n
+    elif type(T2) == float:
+        T2 = [T2] * n
+
+    if len(T1) != n or len(T2) != n:
+        raise ValueError("T1 and T2 must have length backend.num_qubits")
+
+    qubit_properties = backend.target.qubit_properties.copy()
+
+    for i, (t1, t2) in enumerate(zip(T1, T2)):
+        old = qubit_properties[i]
+
+        qubit_properties[i] = QubitProperties(
+            t1=old.t1 if t1 is None else t1*1e-6,
+            t2=old.t2 if t2 is None else t2*1e-6,
+            frequency=old.frequency,
+        )
+    backend.target.qubit_properties = qubit_properties
+    
+    return backend

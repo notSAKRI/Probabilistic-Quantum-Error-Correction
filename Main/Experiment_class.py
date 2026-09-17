@@ -720,7 +720,7 @@ class PIcode_experiment:
 
         self._post_process()
         
-    def _post_process(self):
+    def _post_process(self, n:int = 8):
 
         if self.use_cif:
             flag = 1
@@ -737,9 +737,10 @@ class PIcode_experiment:
             return result
         
         for key in self.storage:
-
+            if key == 'Mitigator':
+                continue
             shots = self.storage[key]['shots']
-            batch_shots = int(np.round((shots/8)))
+            batch_shots = int(np.round((shots/n)))
 
             if key == 'bare_qubit' or key == 'T2_Hahn' or key == 'T2_Ramsey':
                 fids = {}
@@ -753,7 +754,7 @@ class PIcode_experiment:
                 for data in self.storage[key]['result']:
                     data_sets = [[] for _ in range(l) ]
 
-                    for i in range(8):
+                    for i in range(n):
 
                         batch = data[i*(batch_shots): (i+1)*(batch_shots)]
 
@@ -805,7 +806,7 @@ class PIcode_experiment:
                     cbits = int(len(data[0])/total_set)
                     total_qec = cbits - 3 - flag
 
-                    for i in range(8):
+                    for i in range(n):
                         success = []
                         flag_success = []
                         for k in range(total_set):
@@ -908,7 +909,6 @@ class PIcode_experiment:
                 else:
                     delays_us += rec_time
                 delays_us += 2*enc_time
-                print(delays_us)
 
 
         def exp_decay(x, tau, B, C, D):
